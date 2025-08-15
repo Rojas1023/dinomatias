@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Dinosaurios para {{ nombre }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Pantalla inicial -->
+    <div id="start-card" class="card">
+        <h2>🎉 ¡Feliz cumpleaños {{ nombre }}! 🎂</h2>
+        <label for="speed">Velocidad (segundos):</label>
+        <select id="speed">
+            <option value="2">2</option>
+            <option value="5">5</option>
+            <option value="8">8</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+        </select>
+
+        <label for="difficulty">Dificultad:</label>
+        <select id="difficulty">
+            <option value="baja">Baja</option>
+            <option value="media" selected>Media</option>
+            <option value="alta">Alta</option>
+        </select>
+
+        <button id="start-btn">Iniciar</button>
+    </div>
+
+    <!-- HUD del juego -->
+    <div id="hud" style="display:none;">
+        <div class="hud-card">
+            ⏳ <span id="timer">Tiempo: 30</span>
+        </div>
+        <div class="hud-card">
+            ⭐ <span id="score">Puntos: 0</span>
+        </div>
+    </div>
+
+    <!-- Área de juego -->
+    <div id="game-area" style="display:none;">
+        <img id="dino" src="{{ url_for('static', filename='dino.png') }}" alt="Dinosaurio">
+    </div>
+
+    <!-- Pantalla final -->
+    <div id="end-card" class="card" style="display:none;">
+        <h2>🎉 ¡Feliz cumpleaños {{ nombre }}! 🎂</h2>
+        <p id="final-score"></p>
+        <p id="final-settings"></p>
+        <button id="restart-btn">Volver a jugar</button>
+    </div>
+
+    <audio id="pop-sound" src="{{ url_for('static', filename='pop.mp3') }}"></audio>
+
+    <script>
+        let score = 0;
+        let timeLeft = 30;
+        let moveInterval;
+        let gameTimer;
+        let speed = 2;
+        let difficulty = "media";
+
+        const startCard = document.getElementById("start-card");
+        const hud = document.getElementById("hud");
+        const gameArea = document.getElementById("game-area");
+        const endCard = document.getElementById("end-card");
+        const dino = document.getElementById("dino");
+        const scoreDisplay = document.getElementById("score");
+        const timerDisplay = document.getElementById("timer");
+        const popSound = document.getElementById("pop-sound");
+
+        const startBtn = document.getElementById("start-btn");
+        const restartBtn = document.getElementById("restart-btn");
+
+        function moveDino() {
+            const maxX = gameArea.clientWidth - dino.width;
+            const maxY = gameArea.clientHeight - dino.height;
+            const x = Math.random() * maxX;
+            const y = Math.random() * maxY;
+            dino.style.left = x + "px";
+            dino.style.top = y + "px";
+        }
+
+        function startGame() {
+            score = 0;
+            timeLeft = 30;
+
+            speed = parseInt(document.getElementById("speed").value);
+            difficulty = document.getElementById("difficulty").value;
+
+            // Ajustar tamaño del dino según dificultad
+            if (difficulty === "baja") {
+                dino.style.width = "150px";
+            } else if (difficulty === "media") {
+                dino.style.width = "100px";
+            } else {
+                dino.style.width = "70px";
+            }
+
+            startCard.style.display = "none";
+            hud.style.display = "flex";
+            gameArea.style.display = "block";
+            endCard.style.display = "none";
+
+            scoreDisplay.textContent = "Puntos: 0";
+            timerDisplay.textContent = "Tiempo: 30";
+
+            moveDino();
+            moveInterval = setInterval(moveDino, speed * 1000);
+
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = "Tiempo: " + timeLeft;
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            clearInterval(moveInterval);
+            clearInterval(gameTimer);
+            hud.style.display = "none";
+            gameArea.style.display = "none";
+            endCard.style.display = "block";
+            document.getElementById("final-score").textContent = "Puntos obtenidos: " + score;
+            document.getElementById("final-settings").textContent = 
+                "Velocidad: " + speed + "s | Dificultad: " + difficulty;
+        }
+
+        function addPointAnimation(x, y) {
+            const point = document.createElement("div");
+            point.textContent = "+1";
+            point.className = "point-animation";
+            point.style.left = x + "px";
+            point.style.top = y + "px";
+            document.body.appendChild(point);
+
+            setTimeout(() => {
+                point.remove();
+            }, 800);
+        }
+
+        dino.addEventListener("click", (e) => {
+            score++;
+            scoreDisplay.textContent = "Puntos: " + score;
+            popSound.play();
+            addPointAnimation(e.pageX, e.pageY);
+            moveDino();
+        });
+
+        startBtn.addEventListener("click", startGame);
+        restartBtn.addEventListener("click", () => {
+            startCard.style.display = "block";
+            endCard.style.display = "none";
+        });
+    </script>
+</body>
+</html>
